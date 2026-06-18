@@ -1,0 +1,132 @@
+import { describe, it, expect } from 'vitest';
+import { app, request, seedUser, seedRecipe, seedTag, authedReq } from './helpers';
+
+describe('POST /tags', () => {
+  it('returns 401 without auth', async () => {
+    const res = await request(app).post('/tags').send({ name: 'Vegan', slug: 'vegan' });
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 201 on valid input', async () => {
+    const { token } = await seedUser();
+    const res = await authedReq(token).post('/tags').send({ name: 'Vegan', slug: 'vegan' });
+    expect(res.status).toBe(201);
+    expect(res.body.tag).toMatchObject({ name: 'Vegan', slug: 'vegan' });
+  });
+
+  it('returns 409 on duplicate slug', async () => {
+    const { token } = await seedUser();
+    await seedTag(token, { slug: 'vegan' });
+    const res = await authedReq(token).post('/tags').send({ name: 'Vegan2', slug: 'vegan' });
+    expect(res.status).toBe(409);
+  });
+
+  it('returns 400 on invalid slug', async () => {
+    const { token } = await seedUser();
+    const res = await authedReq(token).post('/tags').send({ name: 'X', slug: 'Has Spaces!' });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /tags', () => {
+  it('returns 200 with public list', async () => {
+    const { token } = await seedUser();
+    await seedTag(token, { name: 'Vegan', slug: 'vegan' });
+    await seedTag(token, { name: 'Quick', slug: 'quick' });
+    const res = await request(app).get('/tags');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(2);
+  });
+});
+
+describe('POST /recipes/:recipeId/tags', () => {
+  it('attaches by tagId (201) by author', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    const tag = await seedTag(token, { slug: 'vegan' });
+
+    const res = await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
+    expect(res.status).toBe(201);
+    expect(res.body.tag).toMatchObject({ id: tag.id });
+  });
+
+  it('returns 404 when slug does not exist (strict)', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    const res = await authedReq(token)
+      .post(`/recipes/${recipe.id}/tags`)
+      .send({ slug: 'nonexistent' });
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 403 by non-author', async () => {
+    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
+    const { token } = await seedUser({ email: 'other@b.com' });
+    const recipe = await seedRecipe(authorToken);
+    const tag = await seedTag(authorToken, { slug: 'vegan' });
+
+    const res = await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 409 on duplicate attach', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    const tag = await seedTag(token, { slug: 'vegan' });
+    await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
+
+    const res = await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
+    expect(res.status).toBe(409);
+  });
+});
+
+describe('DELETE /recipes/:recipeId/tags/:tagId', () => {
+  it('returns 204 when detached by author', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token);
+    const tag = await seedTag(token, { slug: 'vegan' });
+    await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
+
+    const res = await authedReq(token).delete(`/recipes/${recipe.id}/tags/${tag.id}`);
+    expect(res.status).toBe(204);
+  });
+
+  it('returns 403 when detached by non-author', async () => {
+    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
+    const { token } = await seedUser({ email: 'other@b.com' });
+    const recipe = await seedRecipe(authorToken);
+    const tag = await seedTag(authorToken, { slug: 'vegan' });
+
+    const res = await authedReq(token).delete(`/recipes/${recipe.id}/tags/${tag.id}`);
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('GET /tags/:slug/recipes', () => {
+  it('returns 200 with tag + filtered recipes', async () => {
+    const { token } = await seedUser();
+    const recipe = await seedRecipe(token, { title: 'Pasta', difficulty: 'easy' });
+    const tag = await seedTag(token, { slug: 'vegan' });
+    await authedReq(token).post(`/recipes/${recipe.id}/tags`).send({ tagId: tag.id });
+
+    const res = await request(app).get('/tags/vegan/recipes');
+    expect(res.status).toBe(200);
+    expect(res.body.tag).toMatchObject({ slug: 'vegan' });
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].id).toBe(recipe.id);
+  });
+
+  it('applies difficulty filter inside /tags/:slug/recipes', async () => {
+    const { token } = await seedUser();
+    const easy = await seedRecipe(token, { title: 'Easy', difficulty: 'easy' });
+    const hard = await seedRecipe(token, { title: 'Hard', difficulty: 'hard' });
+    const tag = await seedTag(token, { slug: 'vegan' });
+    await authedReq(token).post(`/recipes/${easy.id}/tags`).send({ tagId: tag.id });
+    await authedReq(token).post(`/recipes/${hard.id}/tags`).send({ tagId: tag.id });
+
+    const res = await request(app).get('/tags/vegan/recipes?difficulty=easy');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].difficulty).toBe('easy');
+  });
+});

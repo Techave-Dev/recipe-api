@@ -1,0 +1,43 @@
+{
+  "name": "express-starter",
+  "version": "1.0.0",
+  "description": "Recipe API — TDD e2e scaffold",
+  "type": "module",
+  "main": "dist/src/app.js",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "migrate:up": "dotenv -e .env.test -- bash -c 'migrate -path db/migrations -database \"$DATABASE_URL\" up'",
+    "migrate:down:1": "dotenv -e .env.test -- bash -c 'migrate -path db/migrations -database \"$DATABASE_URL\" down 1'",
+    "migrate:status": "dotenv -e .env.test -- bash -c 'migrate -path db/migrations -database \"$DATABASE_URL\" version'",
+    "migrate:create": "migrate create -ext sql -dir db/migrations -seq",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "test": "npm run migrate:up && vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.20.0",
+    "@types/supertest": "^6.0.2",
+    "dotenv-cli": "^8.0.0",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
