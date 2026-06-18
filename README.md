@@ -52,6 +52,25 @@ cp .env.example .env.test
 | `npm run format` | Biome format (write) |
 | `npm run format:check` | Biome format (check only) |
 
+## Running individual test files
+
+```bash
+npx vitest run tests/e2e/auth.test.ts
+npx vitest run tests/e2e/recipes.test.ts
+```
+
+Run a single test by name (regex match on `it()` title):
+
+```bash
+npx vitest run -t "returns 201 with user"
+```
+
+Watch mode for a single file (faster reloads while implementing one endpoint):
+
+```bash
+npx vitest watch tests/e2e/auth.test.ts
+```
+
 ## Project structure
 
 ```
