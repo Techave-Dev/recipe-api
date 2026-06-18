@@ -98,8 +98,6 @@ npx vitest watch tests/e2e/auth.test.ts
         └── tags.test.ts       # 16 tests
 ```
 
-There is no `db/schema.sql` — the schema lives entirely in migration files.
-
 ## TDD workflow
 
 1. Run `npm test` — all 82 tests fail (routes don't exist yet).
