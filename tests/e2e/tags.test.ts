@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { app, request, seedUser, seedRecipe, seedTag, authedReq } from './helpers';
+import { describe, expect, it } from 'vitest';
+import { app, authedReq, request, seedRecipe, seedTag, seedUser } from './helpers';
 
 describe('POST /tags', () => {
   it('returns 401 without auth', async () => {

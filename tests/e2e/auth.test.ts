@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import jwt from 'jsonwebtoken';
+import { describe, expect, it } from 'vitest';
 import { app, request, seedUser } from './helpers';
 
 describe('POST /auth/register', () => {

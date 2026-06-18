@@ -1,35 +1,34 @@
 import request from 'supertest';
-import { config as loadEnv } from 'dotenv';
-import { createApp } from '../../src/app.ts';
-
-loadEnv({ path: process.env.NODE_ENV === 'test' ? '.env.test' : '.env' });
+import { createApp } from '../../src/app';
 
 export const app = createApp();
 
 let n = 0;
 const uniq = (p: string) => `${p}-${Date.now()}-${n++}`;
 
-interface User {
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export interface User {
   id: number;
   email: string;
   name: string;
   createdAt: string;
 }
-interface Recipe {
+export interface Recipe {
   id: number;
   title: string;
   description: string | null;
   cookingTime: number;
-  difficulty: string;
+  difficulty: Difficulty;
   authorId: number;
   createdAt: string;
 }
-interface Tag {
+export interface Tag {
   id: number;
   name: string;
   slug: string;
 }
-interface Ingredient {
+export interface Ingredient {
   id: number;
   recipeId: number;
   name: string;
@@ -50,9 +49,7 @@ export async function seedUser(
 }
 
 export function authedReq(token: string) {
-  const agent = request.agent(app);
-  agent.set('Authorization', `Bearer ${token}`);
-  return agent;
+  return request(app).set('Authorization', `Bearer ${token}`);
 }
 
 export async function seedRecipe(
@@ -61,7 +58,7 @@ export async function seedRecipe(
     title?: string;
     description?: string | null;
     cookingTime?: number;
-    difficulty?: string;
+    difficulty?: Difficulty;
   } = {},
 ): Promise<Recipe> {
   const body = {

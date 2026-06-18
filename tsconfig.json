@@ -15,10 +15,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": false,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src/**/*", "tests/**/*", "db/**/*"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

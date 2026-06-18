@@ -1,5 +1,5 @@
 {
-  "name": "express-starter",
+  "name": "recipe-api",
   "version": "1.0.0",
   "description": "Recipe API — TDD e2e scaffold",
   "type": "module",
@@ -13,8 +13,9 @@
     "migrate:create": "migrate create -ext sql -dir db/migrations -seq",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "test": "npm run migrate:up && vitest run",
-    "test:watch": "vitest"
+    "lint": "biome check .",
+    "test": "npm run migrate:up && dotenv -e .env.test -- vitest run",
+    "test:watch": "dotenv -e .env.test -- vitest"
   },
   "engines": {
     "node": ">=20"

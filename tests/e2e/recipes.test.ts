@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { app, request, seedUser, seedRecipe, seedTag, attachTag, authedReq } from './helpers';
+import { describe, expect, it } from 'vitest';
+import { app, attachTag, authedReq, request, seedRecipe, seedTag, seedUser } from './helpers';
 
 describe('POST /recipes', () => {
   it('returns 401 without auth', async () => {
@@ -143,9 +143,8 @@ describe('GET /recipes/:id', () => {
 
 describe('PATCH /recipes/:id', () => {
   it('returns 200 when patched by author', async () => {
-    const { user, token } = await seedUser();
+    const { token } = await seedUser();
     const recipe = await seedRecipe(token);
-    void user;
     const res = await authedReq(token).patch(`/recipes/${recipe.id}`).send({ title: 'New' });
     expect(res.status).toBe(200);
     expect(res.body.recipe.title).toBe('New');

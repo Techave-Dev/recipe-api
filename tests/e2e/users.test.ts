@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { app, request, seedUser, authedReq } from './helpers';
+import { describe, expect, it } from 'vitest';
+import { app, authedReq, request, seedUser } from './helpers';
 
 describe('GET /users/:id', () => {
   it('returns 200 with public user (no password)', async () => {
