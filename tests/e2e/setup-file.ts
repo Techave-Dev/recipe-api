@@ -1,7 +1,7 @@
-import { afterAll, beforeAll } from 'vitest';
+import { afterAll, beforeEach } from 'vitest';
 import { closePool, truncateAll } from './db';
 
-beforeAll(async () => {
+beforeEach(async () => {
   await truncateAll();
 });
 
