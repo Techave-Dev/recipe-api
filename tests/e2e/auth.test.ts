@@ -1,16 +1,17 @@
 import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
-import { app, request, seedUser } from './helpers';
+import { app, request, seedUser, uniq } from './helpers';
 
 describe('POST /auth/register', () => {
   it('returns 201 with user + token', async () => {
+    const email = `${uniq('a')}@b.com`;
     const res = await request(app)
       .post('/auth/register')
-      .send({ email: 'a@b.com', password: 'secret123', name: 'Alice' });
+      .send({ email, password: 'secret123', name: 'Alice' });
 
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({
-      user: { email: 'a@b.com', name: 'Alice' },
+      user: { email, name: 'Alice' },
       token: expect.any(String),
     });
     expect(res.body.user).not.toHaveProperty('password');
@@ -18,7 +19,7 @@ describe('POST /auth/register', () => {
   });
 
   it('returns 409 on duplicate email', async () => {
-    const email = `dup-${Date.now()}@b.com`;
+    const email = `${uniq('dup')}@b.com`;
     await seedUser({ email });
     const res = await request(app)
       .post('/auth/register')
@@ -31,7 +32,7 @@ describe('POST /auth/register', () => {
   it('returns 400 on weak password (<8)', async () => {
     const res = await request(app)
       .post('/auth/register')
-      .send({ email: 'a@b.com', password: 'short', name: 'A' });
+      .send({ email: `${uniq('a')}@b.com`, password: 'short', name: 'A' });
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
@@ -73,23 +74,25 @@ describe('POST /auth/register', () => {
 
 describe('POST /auth/login', () => {
   it('returns 200 with user + token on correct password', async () => {
-    await seedUser({ email: 'a@b.com', password: 'secret123' });
+    const email = `${uniq('a')}@b.com`;
+    await seedUser({ email, password: 'secret123' });
     const res = await request(app)
       .post('/auth/login')
-      .send({ email: 'a@b.com', password: 'secret123' });
+      .send({ email, password: 'secret123' });
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
-      user: { email: 'a@b.com' },
+      user: { email },
       token: expect.any(String),
     });
   });
 
   it('returns 401 on wrong password', async () => {
-    await seedUser({ email: 'a@b.com', password: 'secret123' });
+    const email = `${uniq('a')}@b.com`;
+    await seedUser({ email, password: 'secret123' });
     const res = await request(app)
       .post('/auth/login')
-      .send({ email: 'a@b.com', password: 'wrong-pwd' });
+      .send({ email, password: 'wrong-pwd' });
 
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('UNAUTHORIZED');
@@ -104,11 +107,12 @@ describe('GET /auth/me', () => {
   });
 
   it('returns 200 with user when valid token', async () => {
-    const { user, token } = await seedUser({ email: 'a@b.com', name: 'Alice' });
+    const email = `${uniq('a')}@b.com`;
+    const { user, token } = await seedUser({ email, name: 'Alice' });
     const res = await request(app).get('/auth/me').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ id: user.id, email: 'a@b.com', name: 'Alice' });
+    expect(res.body.user).toMatchObject({ id: user.id, email, name: 'Alice' });
   });
 
   it('returns 401 with malformed Bearer (no token)', async () => {

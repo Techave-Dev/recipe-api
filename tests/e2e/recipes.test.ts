@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { app, attachTag, authedReq, request, seedRecipe, seedTag, seedUser } from './helpers';
+import { app, attachTag, authedReq, request, seedRecipe, seedTag, seedUser, uniq } from './helpers';
 
 describe('POST /recipes', () => {
   it('returns 401 without auth', async () => {
@@ -120,14 +120,15 @@ describe('GET /recipes/:id', () => {
   it('returns 200 with recipe + relations', async () => {
     const { token } = await seedUser();
     const recipe = await seedRecipe(token, { title: 'Pasta' });
-    const tag = await seedTag(token, { slug: 'vegan' });
+    const slug = uniq('vegan');
+    const tag = await seedTag(token, { slug });
     await attachTag(token, recipe.id, tag.id);
 
     const res = await request(app).get(`/recipes/${recipe.id}`);
     expect(res.status).toBe(200);
     expect(res.body.recipe).toMatchObject({ id: recipe.id, title: 'Pasta' });
     expect(res.body.ingredients).toEqual([]);
-    expect(res.body.tags).toEqual([expect.objectContaining({ slug: 'vegan' })]);
+    expect(res.body.tags).toEqual([expect.objectContaining({ slug })]);
   });
 
   it('returns 404 for missing recipe', async () => {
@@ -151,8 +152,8 @@ describe('PATCH /recipes/:id', () => {
   });
 
   it('returns 403 when patched by non-author', async () => {
-    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
-    const { token } = await seedUser({ email: 'other@b.com' });
+    const { token: authorToken } = await seedUser({ email: `${uniq('author')}@b.com` });
+    const { token } = await seedUser({ email: `${uniq('other')}@b.com` });
     const recipe = await seedRecipe(authorToken);
 
     const res = await authedReq(token).patch(`/recipes/${recipe.id}`).send({ title: 'X' });
@@ -178,8 +179,8 @@ describe('DELETE /recipes/:id', () => {
   });
 
   it('returns 403 when deleted by non-author', async () => {
-    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
-    const { token } = await seedUser({ email: 'other@b.com' });
+    const { token: authorToken } = await seedUser({ email: `${uniq('author')}@b.com` });
+    const { token } = await seedUser({ email: `${uniq('other')}@b.com` });
     const recipe = await seedRecipe(authorToken);
 
     const res = await authedReq(token).delete(`/recipes/${recipe.id}`);
@@ -198,8 +199,8 @@ describe('DELETE /recipes/:id', () => {
 
 describe('Recipe filters (GET /recipes)', () => {
   async function seedFixtures() {
-    const { token: aliceToken } = await seedUser({ email: 'alice@b.com' });
-    const { token: bobToken } = await seedUser({ email: 'bob@b.com' });
+    const { token: aliceToken } = await seedUser({ email: `${uniq('alice')}@b.com` });
+    const { token: bobToken } = await seedUser({ email: `${uniq('bob')}@b.com` });
     const r1 = await seedRecipe(aliceToken, {
       title: 'Chicken Soup',
       cookingTime: 60,
@@ -263,10 +264,11 @@ describe('Recipe filters (GET /recipes)', () => {
   it('filters by single tag', async () => {
     const { token } = await seedUser();
     const r1 = await seedRecipe(token, { title: 'Soup' });
-    const tag = await seedTag(token, { slug: 'soup' });
+    const slug = uniq('soup');
+    const tag = await seedTag(token, { slug });
     await attachTag(token, r1.id, tag.id);
 
-    const res = await request(app).get('/recipes?tag=soup');
+    const res = await request(app).get(`/recipes?tag=${slug}`);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0].id).toBe(r1.id);
@@ -275,12 +277,12 @@ describe('Recipe filters (GET /recipes)', () => {
   it('filters by multiple tags (AND)', async () => {
     const { token } = await seedUser();
     const r1 = await seedRecipe(token, { title: 'Soup' });
-    const t1 = await seedTag(token, { slug: 'soup' });
-    const t2 = await seedTag(token, { slug: 'comfort' });
+    const t1 = await seedTag(token, { slug: uniq('soup') });
+    const t2 = await seedTag(token, { slug: uniq('comfort') });
     await attachTag(token, r1.id, t1.id);
     await attachTag(token, r1.id, t2.id);
 
-    const res = await request(app).get('/recipes?tag=soup&tag=comfort');
+    const res = await request(app).get(`/recipes?tag=${t1.slug}&tag=${t2.slug}`);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
   });

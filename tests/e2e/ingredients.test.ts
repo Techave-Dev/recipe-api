@@ -8,6 +8,7 @@ import {
   seedRecipe,
   seedTag,
   seedUser,
+  uniq,
 } from './helpers';
 
 describe('POST /recipes/:recipeId/ingredients', () => {
@@ -27,8 +28,8 @@ describe('POST /recipes/:recipeId/ingredients', () => {
   });
 
   it('returns 403 when created by non-author', async () => {
-    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
-    const { token } = await seedUser({ email: 'other@b.com' });
+    const { token: authorToken } = await seedUser({ email: `${uniq('author')}@b.com` });
+    const { token } = await seedUser({ email: `${uniq('other')}@b.com` });
     const recipe = await seedRecipe(authorToken);
 
     const res = await authedReq(token)
@@ -82,8 +83,8 @@ describe('PATCH /ingredients/:id', () => {
   });
 
   it('returns 403 when patched by non-author', async () => {
-    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
-    const { token } = await seedUser({ email: 'other@b.com' });
+    const { token: authorToken } = await seedUser({ email: `${uniq('author')}@b.com` });
+    const { token } = await seedUser({ email: `${uniq('other')}@b.com` });
     const recipe = await seedRecipe(authorToken);
     const ing = await seedIngredient(authorToken, recipe.id);
 
@@ -102,8 +103,8 @@ describe('DELETE /ingredients/:id', () => {
   });
 
   it('returns 403 when deleted by non-author', async () => {
-    const { token: authorToken } = await seedUser({ email: 'author@b.com' });
-    const { token } = await seedUser({ email: 'other@b.com' });
+    const { token: authorToken } = await seedUser({ email: `${uniq('author')}@b.com` });
+    const { token } = await seedUser({ email: `${uniq('other')}@b.com` });
     const recipe = await seedRecipe(authorToken);
     const ing = await seedIngredient(authorToken, recipe.id);
 
@@ -117,7 +118,7 @@ describe('Cascade delete', () => {
     const { token } = await seedUser();
     const recipe = await seedRecipe(token);
     await seedIngredient(token, recipe.id, { name: 'Salt' });
-    const tag = await seedTag(token, { slug: 'vegan' });
+    const tag = await seedTag(token, { slug: uniq('vegan') });
     await attachTag(token, recipe.id, tag.id);
 
     const res = await authedReq(token).delete(`/recipes/${recipe.id}`);

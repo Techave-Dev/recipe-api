@@ -6,6 +6,8 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },
     fileParallelism: false,
+    globalSetup: ['./tests/e2e/global-setup.ts'],
+    setupFiles: ['./tests/e2e/setup-file.ts'],
     hookTimeout: 5_000,
     testTimeout: 5_000,
   },

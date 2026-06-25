@@ -4,7 +4,7 @@ import { createApp } from '../../src/app';
 export const app = createApp();
 
 let n = 0;
-const uniq = (p: string) => `${p}-${Date.now()}-${n++}`;
+export const uniq = (p: string) => `${p}-${Date.now()}-${n++}`;
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -49,7 +49,14 @@ export async function seedUser(
 }
 
 export function authedReq(token: string) {
-  return request(app).set('Authorization', `Bearer ${token}`);
+  const headers = { Authorization: `Bearer ${token}` };
+  return {
+    get: (url: string) => request(app).get(url).set(headers),
+    post: (url: string) => request(app).post(url).set(headers),
+    patch: (url: string) => request(app).patch(url).set(headers),
+    put: (url: string) => request(app).put(url).set(headers),
+    delete: (url: string) => request(app).delete(url).set(headers),
+  };
 }
 
 export async function seedRecipe(

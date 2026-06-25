@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { app, authedReq, request, seedUser } from './helpers';
+import { app, authedReq, request, seedUser, uniq } from './helpers';
 
 describe('GET /users/:id', () => {
   it('returns 200 with public user (no password)', async () => {
-    const { user } = await seedUser({ email: 'a@b.com', name: 'Alice' });
+    const email = `${uniq('a')}@b.com`;
+    const { user } = await seedUser({ email, name: 'Alice' });
     const res = await request(app).get(`/users/${user.id}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ id: user.id, email: 'a@b.com', name: 'Alice' });
+    expect(res.body.user).toMatchObject({ id: user.id, email, name: 'Alice' });
     expect(res.body.user).not.toHaveProperty('password');
   });
 
@@ -34,8 +35,8 @@ describe('PATCH /users/:id', () => {
   });
 
   it('returns 403 when patching another user', async () => {
-    const { user: me } = await seedUser({ email: 'me@b.com' });
-    const { token: otherToken } = await seedUser({ email: 'other@b.com' });
+    const { user: me } = await seedUser({ email: `${uniq('me')}@b.com` });
+    const { token: otherToken } = await seedUser({ email: `${uniq('other')}@b.com` });
 
     const res = await authedReq(otherToken).patch(`/users/${me.id}`).send({ name: 'Hacked' });
     expect(res.status).toBe(403);
@@ -43,11 +44,12 @@ describe('PATCH /users/:id', () => {
   });
 
   it('returns 409 on email conflict', async () => {
-    const { user: me, token } = await seedUser({ email: 'me@b.com' });
-    const { user: other } = await seedUser({ email: 'taken@b.com' });
+    const { user: me, token } = await seedUser({ email: `${uniq('me')}@b.com` });
+    const takenEmail = `${uniq('taken')}@b.com`;
+    const { user: other } = await seedUser({ email: takenEmail });
     void other;
 
-    const res = await authedReq(token).patch(`/users/${me.id}`).send({ email: 'taken@b.com' });
+    const res = await authedReq(token).patch(`/users/${me.id}`).send({ email: takenEmail });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('CONFLICT');
   });
